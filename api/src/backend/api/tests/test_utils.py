@@ -357,6 +357,26 @@ class TestGetProwlerProviderKwargs:
         expected_result = {**secret_dict, **expected_extra_kwargs}
         assert result == expected_result
 
+    def test_get_prowler_provider_kwargs_azure_forwards_region(self):
+        secret_dict = {
+            "client_id": "client-id",
+            "client_secret": "client-secret",
+            "tenant_id": "tenant-id",
+            "region": "AzureChinaCloud",
+        }
+        secret_mock = MagicMock()
+        secret_mock.secret = secret_dict
+
+        provider = MagicMock()
+        provider.provider = Provider.ProviderChoices.AZURE.value
+        provider.secret = secret_mock
+        provider.uid = "provider_uid"
+
+        result = get_prowler_provider_kwargs(provider)
+
+        assert result["region"] == "AzureChinaCloud"
+        assert result["subscription_ids"] == ["provider_uid"]
+
     def test_get_prowler_provider_kwargs_with_mutelist(self):
         provider_uid = "provider_uid"
         secret_dict = {"key": "value"}

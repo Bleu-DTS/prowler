@@ -3183,6 +3183,83 @@ class TestProviderSecretViewSet:
             "/data/attributes/secret/okta_private_key"
         )
 
+    @pytest.mark.parametrize("region", ["AzureChinaCloud", "AzureUSGovernment"])
+    def test_azure_provider_secrets_create_with_region(
+        self, providers_fixture, authenticated_client, region
+    ):
+        azure_provider = Provider.objects.filter(
+            provider=Provider.ProviderChoices.AZURE.value
+        )[0]
+        secret = {
+            "client_id": "client-id",
+            "client_secret": "client-secret",
+            "tenant_id": "tenant-id",
+            "region": region,
+        }
+        data = {
+            "data": {
+                "type": "provider-secrets",
+                "attributes": {
+                    "name": "Azure Secret",
+                    "secret_type": ProviderSecret.TypeChoices.STATIC,
+                    "secret": secret,
+                },
+                "relationships": {
+                    "provider": {
+                        "data": {"type": "providers", "id": str(azure_provider.id)}
+                    }
+                },
+            }
+        }
+
+        response = authenticated_client.post(
+            reverse("providersecret-list"),
+            data=json.dumps(data),
+            content_type="application/vnd.api+json",
+        )
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert ProviderSecret.objects.get().secret == secret
+
+    def test_azure_provider_secrets_invalid_region(
+        self, providers_fixture, authenticated_client
+    ):
+        azure_provider = Provider.objects.filter(
+            provider=Provider.ProviderChoices.AZURE.value
+        )[0]
+        data = {
+            "data": {
+                "type": "provider-secrets",
+                "attributes": {
+                    "name": "Azure Secret",
+                    "secret_type": ProviderSecret.TypeChoices.STATIC,
+                    "secret": {
+                        "client_id": "client-id",
+                        "client_secret": "client-secret",
+                        "tenant_id": "tenant-id",
+                        "region": "AzureMoonCloud",
+                    },
+                },
+                "relationships": {
+                    "provider": {
+                        "data": {"type": "providers", "id": str(azure_provider.id)}
+                    }
+                },
+            }
+        }
+
+        response = authenticated_client.post(
+            reverse("providersecret-list"),
+            data=json.dumps(data),
+            content_type="application/vnd.api+json",
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.json()["errors"][0]["source"]["pointer"] == (
+            "/data/attributes/secret/region"
+        )
+        assert ProviderSecret.objects.count() == 0
+
     def test_provider_secrets_partial_update(
         self, authenticated_client, provider_secret_fixture
     ):

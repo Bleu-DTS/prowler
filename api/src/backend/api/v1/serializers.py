@@ -1,5 +1,6 @@
 import base64
 import json
+from argparse import ArgumentTypeError
 from datetime import datetime, timedelta, timezone
 
 from django.conf import settings
@@ -73,6 +74,7 @@ from api.v1.serializer_utils.lighthouse import (
 from api.v1.serializer_utils.processors import ProcessorConfigField
 from api.v1.serializer_utils.providers import ProviderSecretField
 from prowler.lib.mutelist.mutelist import Mutelist
+from prowler.providers.azure.lib.arguments.arguments import validate_azure_region
 
 # Base
 
@@ -1624,6 +1626,15 @@ class AzureProviderSecret(serializers.Serializer):
     client_id = serializers.CharField()
     client_secret = serializers.CharField()
     tenant_id = serializers.CharField()
+    region = serializers.CharField(required=False)
+
+    def validate_region(self, value):
+        """Accept only the Azure clouds supported by the Prowler SDK."""
+        try:
+            validate_azure_region(value)
+        except ArgumentTypeError as error:
+            raise ValidationError(str(error))
+        return value
 
     class Meta:
         resource_name = "provider-secrets"

@@ -94,6 +94,17 @@ from rest_framework_json_api import serializers
                         "description": "The Azure tenant ID, representing the directory where the application is "
                         "registered.",
                     },
+                    "region": {
+                        "type": "string",
+                        "description": "The Azure cloud to authenticate and scan against. Defaults to "
+                        "AzureCloud when omitted.",
+                        "enum": [
+                            "AzureCloud",
+                            "AzureChinaCloud",
+                            "AzureUSGovernment",
+                            "AzureBleuCloud",
+                        ],
+                    },
                 },
                 "required": ["client_id", "client_secret", "tenant_id"],
             },
